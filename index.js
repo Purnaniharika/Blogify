@@ -4,11 +4,17 @@ const app = express();
 const PORT = 8000 ;
 const cookiParser = require('cookie-parser')
 const userRoute = require("./routes/user")
-const mongoose = require('mongoose');
-const { checkForAuthenticationCookie } = require("./middlewares/authentication");
+const blogRoute = require("./routes/blog")
 
+const Blog = require('./models/blog')
+
+const mongoose = require('mongoose');
 mongoose.connect('mongodb://127.0.0.1:27017/blogify').then((e)=>{console.log("mongodb connected");
 })
+
+const { checkForAuthenticationCookie } = require("./middlewares/authentication");
+
+app.use(express.static(path.resolve("./public")))
 
 
 app.set('view engine','ejs')
@@ -19,12 +25,16 @@ app.use(express.urlencoded({extended:false}))
 app.use(cookiParser())
 app.use(checkForAuthenticationCookie("token"))
 
-app.get('/',(req,res)=>{
+app.get('/',async(req,res)=>{
+  const allBlogs = await Blog.find({});
   res.render('home',{
-    user:req.user
+    user:req.user,
+    blogs:allBlogs
   });
 });
 
 app.use("/user",userRoute)
+app.use("/blog",blogRoute)
+
 app.listen(PORT,()=>console.log(`Server Started at PORT:${PORT}`)
 )
